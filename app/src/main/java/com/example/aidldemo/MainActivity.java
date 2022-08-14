@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -108,7 +109,10 @@ public class MainActivity extends AppCompatActivity{
                 try {
                     Message message = new Message();
                     message.setContent("this message from client main activity");
+                    Log.d("theEffectOf_in", "before send in mainActivity the isSendSuccess of message: "
+                            + message.isSendSuccess());
                     iMessageServiceProxy.sendMessage(message);
+                    Log.d("theEffectOf_in", "after send in mainActivity the isSendSuccess of message: " + message.isSendSuccess());
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }

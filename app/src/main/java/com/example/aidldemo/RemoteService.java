@@ -8,6 +8,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -90,6 +91,7 @@ public class RemoteService extends Service {
             } else {
                 message.setSendSuccess(false);
             }
+            Log.d("theEffectOf_in", "send in remoteService the isSendSuccess of message: " + message.isSendSuccess());
         }
 
         @Override
