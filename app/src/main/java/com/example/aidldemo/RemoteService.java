@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.widget.Toast;
 
@@ -24,7 +25,11 @@ public class RemoteService extends Service {
 
     private Handler handler = new Handler(Looper.getMainLooper());
 
-    private ArrayList<MessageReceiveListener> messageReceiveListenerArrayList = new ArrayList<>();
+    // 不能使用ArrayList, 因为由ipc传递过来的对象会经过序列化和反序列化，那么在client侧发送来的对象是同一个对象时，
+    // 传递到service侧就不是同一个对象了，所以当想使用list.remove(obj)的时候，就不能按我们预想的去移除对象
+    // 这里得用RemoteCallbackList来解决想这个问题
+    private RemoteCallbackList<MessageReceiveListener> messageReceiveListenerRemoteCallbackList =
+            new RemoteCallbackList<>();
 
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private ScheduledFuture scheduledFuture;
@@ -36,26 +41,31 @@ public class RemoteService extends Service {
         @Override
         public void connect() throws RemoteException {
             try {
-                handler.post(()-> Toast.makeText(RemoteService.this, "Connecting", Toast.LENGTH_SHORT).show());
+                handler.post(()-> Toast.makeText(RemoteService.this, "Connecting", Toast.LENGTH_LONG).show());
                 // 模拟连接时间5s
                 Thread.sleep(5000);
                 isConnected = true;
                 handler.post(()-> Toast.makeText(RemoteService.this, "Connected!", Toast.LENGTH_SHORT).show());
+
                 // 连接上后模拟remoteService端每隔5s回调一下注册的messageReceiveListener的onReceiveMessage方法，即向客户端发送一个message
                 scheduledFuture = scheduledThreadPoolExecutor.scheduleAtFixedRate(()->{
-                    for (MessageReceiveListener messageReceiveListener: messageReceiveListenerArrayList){
+                    int size = messageReceiveListenerRemoteCallbackList.beginBroadcast();
+                    for (int i =0; i < size; i++){
                         Message message = new Message();
                         message.setContent("this message from remote");
                         try {
-                            messageReceiveListener.onReceiveMessage(message);
+                            messageReceiveListenerRemoteCallbackList.getBroadcastItem(i).onReceiveMessage(message);
                         } catch (RemoteException e) {
                             e.printStackTrace();
                         }
                     }
-                        }, 5000, 5000, TimeUnit.MILLISECONDS);
+                    messageReceiveListenerRemoteCallbackList.finishBroadcast();
+                        },
+                        5000, 5000, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
         }
 
         @Override
@@ -85,14 +95,14 @@ public class RemoteService extends Service {
         @Override
         public void registerMessageReciveListener(MessageReceiveListener messageReceiveListener) throws RemoteException {
             if (messageReceiveListener != null) {
-                messageReceiveListenerArrayList.add(messageReceiveListener);
+                messageReceiveListenerRemoteCallbackList.register(messageReceiveListener);
             }
         }
 
         @Override
         public void unRegisterMessageReciveListener(MessageReceiveListener messageReceiveListener) throws RemoteException {
             if (messageReceiveListener != null) {
-                messageReceiveListenerArrayList.remove(messageReceiveListener);
+                messageReceiveListenerRemoteCallbackList.unregister(messageReceiveListener);
             }
         }
     };
