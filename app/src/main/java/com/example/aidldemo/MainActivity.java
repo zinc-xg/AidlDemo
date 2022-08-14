@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity{
         bindService(intent, new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                // 通过色serviceManager拿到多个不同服务(ConnectionService和MessageService)
+                // 通过serviceManager拿到多个不同服务(ConnectionService和MessageService)
                 iServiceManagerProxy = IServiceManager.Stub.asInterface(iBinder);
                 try {
                     iConnectionServiceProxy = IConnectionService.Stub.asInterface(
