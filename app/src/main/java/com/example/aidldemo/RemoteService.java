@@ -95,6 +95,21 @@ public class RemoteService extends Service {
         }
 
         @Override
+        public void sendMessageWithInout(Message message) throws RemoteException {
+            handler.post(()-> Toast.makeText(RemoteService.this, message.getContent(), Toast.LENGTH_SHORT).show());
+            if (isConnected) {
+                message.setSendSuccess(true);
+            } else {
+                message.setSendSuccess(false);
+            }
+            message.setContent("content changed in service");
+            Log.d("theEffectOf_in", "send in remoteService the isSendSuccess of message: "
+                    + message.isSendSuccess());
+            Log.d("theEffectOf_in", "send in remoteService the content of message: "
+                    + message.getContent());
+        }
+
+        @Override
         public void registerMessageReciveListener(MessageReceiveListener messageReceiveListener) throws RemoteException {
             if (messageReceiveListener != null) {
                 messageReceiveListenerRemoteCallbackList.register(messageReceiveListener);

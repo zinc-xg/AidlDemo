@@ -21,7 +21,8 @@ import com.example.aidldemo.entity.Message;
 public class MainActivity extends AppCompatActivity{
 
     private Button buttonConnect, buttonDisconnect, buttonIsConnected,
-            buttonSendMessage, buttonRegisterListener, buttonUnRegisterListener;
+            buttonSendMessage, buttonRegisterListener, buttonUnRegisterListener,
+            buttonSendMessageWithInout;
 
     private IConnectionService iConnectionServiceProxy;
     private IMessageService iMessageServiceProxy;
@@ -119,6 +120,27 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
+        buttonSendMessageWithInout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    Message message = new Message();
+                    message.setContent("this message from client main activity");
+                    Log.d("theEffectOf_in", "before send in mainActivity the content of message: "
+                            + message.getContent());
+                    Log.d("theEffectOf_in", "before send in mainActivity the isSendSuccess of message: "
+                            + message.isSendSuccess());
+                    iMessageServiceProxy.sendMessageWithInout(message);
+                    Log.d("theEffectOf_in", "after send in mainActivity the isSendSuccess of message: "
+                            + message.isSendSuccess());
+                    Log.d("theEffectOf_in", "after send in mainActivity the content of message: "
+                            + message.getContent());
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
         buttonRegisterListener.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -149,6 +171,7 @@ public class MainActivity extends AppCompatActivity{
         buttonSendMessage = findViewById(R.id.button4);
         buttonRegisterListener = findViewById(R.id.button5);
         buttonUnRegisterListener = findViewById(R.id.button6);
+        buttonSendMessageWithInout = findViewById(R.id.button7);
     }
 
 }

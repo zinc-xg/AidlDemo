@@ -52,4 +52,11 @@ public class Message implements android.os.Parcelable {
         parcel.writeString(content);
         parcel.writeByte((byte) (isSendSuccess ? 1 : 0));
     }
+
+    public void readFromParcel(Parcel parcel){
+        // 如果我只想“引用传递一部分”，比如不想把content的改变传回来，那么我就在这里不read content的值
+        // 这个想法不行。。。试了一下，会导致isSendSuccess的改变也传不回去
+        content = parcel.readString();
+        isSendSuccess = parcel.readByte()==1;
+    }
 }
