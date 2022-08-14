@@ -36,6 +36,7 @@ public class RemoteService extends Service {
         @Override
         public void connect() throws RemoteException {
             try {
+                handler.post(()-> Toast.makeText(RemoteService.this, "Connecting", Toast.LENGTH_SHORT).show());
                 // 模拟连接时间5s
                 Thread.sleep(5000);
                 isConnected = true;

@@ -7,7 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.view.View;
 import android.widget.Button;
@@ -19,9 +21,21 @@ public class MainActivity extends AppCompatActivity{
 
     private Button buttonConnect, buttonDisconnect, buttonIsConnected,
             buttonSendMessage, buttonRegisterListener, buttonUnRegisterListener;
+
     private IConnectionService iConnectionServiceProxy;
     private IMessageService iMessageServiceProxy;
     private IServiceManager iServiceManagerProxy;
+
+    // 在client中实现aidl定义的接口方法，相当于远程service可以回调用client的方法，这里
+    // MessageReceiveListener的onReceiveMessage方法，是模拟在收到service发送的消息后，client的处理方式
+    private MessageReceiveListener messageReceiveListener = new MessageReceiveListener.Stub() {
+        @Override
+        public void onReceiveMessage(Message message) throws RemoteException {
+            // UI相关的处理要放到主线程中去，而aidl中的方法是在binder的线程池中运行，所以这里要使用handler.post
+            new Handler(Looper.getMainLooper()).post(
+                    ()-> Toast.makeText(MainActivity.this, "client: " + message.getContent(), Toast.LENGTH_SHORT).show());
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,14 +118,22 @@ public class MainActivity extends AppCompatActivity{
         buttonRegisterListener.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                try {
+                    iMessageServiceProxy.registerMessageReciveListener(messageReceiveListener);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
         buttonUnRegisterListener.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                try {
+                    iMessageServiceProxy.unRegisterMessageReciveListener(messageReceiveListener);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
