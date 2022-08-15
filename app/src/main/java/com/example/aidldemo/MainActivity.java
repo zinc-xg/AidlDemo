@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
@@ -22,11 +23,12 @@ public class MainActivity extends AppCompatActivity{
 
     private Button buttonConnect, buttonDisconnect, buttonIsConnected,
             buttonSendMessage, buttonRegisterListener, buttonUnRegisterListener,
-            buttonSendMessageWithInout;
+            buttonSendMessageWithInout, buttonSendByMessenger;
 
     private IConnectionService iConnectionServiceProxy;
     private IMessageService iMessageServiceProxy;
     private IServiceManager iServiceManagerProxy;
+    private Messenger messengerProxy;
 
     // 在client中实现aidl定义的接口方法，相当于远程service可以回调用client的方法，这里
     // MessageReceiveListener的onReceiveMessage方法，是模拟在收到service发送的消息后，client的处理方式
@@ -57,6 +59,7 @@ public class MainActivity extends AppCompatActivity{
                             iServiceManagerProxy.getService(IConnectionService.class.getSimpleName()));
                     iMessageServiceProxy = IMessageService.Stub.asInterface(
                             iServiceManagerProxy.getService(IMessageService.class.getSimpleName()));
+                    messengerProxy = new Messenger(iServiceManagerProxy.getService(Messenger.class.getSimpleName()));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -162,6 +165,25 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         });
+
+        buttonSendByMessenger.setOnClickListener(new View.OnClickListener() {
+            // Messenger来进行ipc, 相当于拿到remote侧的handler, 这边的操作即给handler发送一个带数据的android.os.Message
+            // remote端的handler会接收到这个数据，在其handleMessage方法中处理
+            @Override
+            public void onClick(View v) {
+                try {
+                    Message message = new Message();
+                    message.setContent("this is a message send from mainActivity by Messenger");
+                    android.os.Message messageHandler = new android.os.Message();
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable("message", message);
+                    messageHandler.setData(bundle);
+                    messengerProxy.send(messageHandler);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void bindResources() {
@@ -172,6 +194,7 @@ public class MainActivity extends AppCompatActivity{
         buttonRegisterListener = findViewById(R.id.button5);
         buttonUnRegisterListener = findViewById(R.id.button6);
         buttonSendMessageWithInout = findViewById(R.id.button7);
+        buttonSendByMessenger = findViewById(R.id.button8);
     }
 
 }

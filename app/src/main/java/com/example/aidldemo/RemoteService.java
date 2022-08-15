@@ -3,14 +3,17 @@ package com.example.aidldemo;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Messenger;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.aidldemo.entity.Message;
@@ -24,7 +27,18 @@ public class RemoteService extends Service {
 
     private boolean isConnected = false;
 
-    private Handler handler = new Handler(Looper.getMainLooper());
+    private Handler handler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(@NonNull android.os.Message msg) {
+            super.handleMessage(msg);
+            Bundle bundle = msg.getData();
+            // 通过Parcel来反序列化一个对象的时候，最好用bundle设置一下对象的ClassLoader，否则可能序列化异常
+            bundle.setClassLoader(Message.class.getClassLoader());
+            Message message = bundle.getParcelable("message");
+            // handleMessage方法是在主线程，所以这里可以直接进行UI操作
+            Toast.makeText(RemoteService.this, message.getContent(), Toast.LENGTH_SHORT).show();
+        }
+    };
 
     // 不能使用ArrayList, 因为由ipc传递过来的对象会经过序列化和反序列化，那么在client侧发送来的对象是同一个对象时，
     // 传递到service侧就不是同一个对象了，所以当想使用list.remove(obj)的时候，就不能按我们预想的去移除对象
@@ -34,6 +48,7 @@ public class RemoteService extends Service {
 
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private ScheduledFuture scheduledFuture;
+    private Messenger messenger = new Messenger(handler);
 
     IConnectionService iConnectionService = new IConnectionService.Stub() {
 
@@ -131,6 +146,8 @@ public class RemoteService extends Service {
                return iConnectionService.asBinder();
            } else if (IMessageService.class.getSimpleName().equals(serviceName)) {
                return iMessageService.asBinder();
+           } else if (Messenger.class.getSimpleName().equals(serviceName)) {
+               return messenger.getBinder();
            } else {
                return null;
            }
