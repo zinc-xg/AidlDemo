@@ -37,6 +37,23 @@ public class RemoteService extends Service {
             Message message = bundle.getParcelable("message");
             // handleMessage方法是在主线程，所以这里可以直接进行UI操作
             Toast.makeText(RemoteService.this, message.getContent(), Toast.LENGTH_SHORT).show();
+
+            try {
+                // 获取android.os.Message消息发送方的Messenger对象（即客户端的Messenger），这样就可以给客户端回复一个消息
+                Messenger messengerClient = msg.replyTo;
+                android.os.Message messageHandlerReply = new android.os.Message();
+
+                // 这里android的Message需要塞入一个bundle, bundle中用键值对的方式塞入真正要传递的数据
+                Message replyMessage = new Message();
+                replyMessage.setContent("this is a reply message");
+                Bundle bundleReply = new Bundle();
+                bundleReply.putParcelable("replyMessage", replyMessage);
+                messageHandlerReply.setData(bundleReply);
+                messengerClient.send(messageHandlerReply);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+
         }
     };
 

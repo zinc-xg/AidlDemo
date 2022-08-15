@@ -1,5 +1,6 @@
 package com.example.aidldemo;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ComponentName;
@@ -29,6 +30,24 @@ public class MainActivity extends AppCompatActivity{
     private IMessageService iMessageServiceProxy;
     private IServiceManager iServiceManagerProxy;
     private Messenger messengerProxy;
+
+    private final Handler handler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(@NonNull android.os.Message msg) {
+            super.handleMessage(msg);
+            Bundle bundle = msg.getData();
+            bundle.setClassLoader(Message.class.getClassLoader());
+            final Message message = bundle.getParcelable("replyMessage");
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, message.getContent(), Toast.LENGTH_SHORT).show();
+                }
+            }, 3000);
+        }
+    };
+
+    private Messenger messengerClient = new Messenger(handler);
 
     // 在client中实现aidl定义的接口方法，相当于远程service可以回调用client的方法，这里
     // MessageReceiveListener的onReceiveMessage方法，是模拟在收到service发送的消息后，client的处理方式
@@ -175,6 +194,13 @@ public class MainActivity extends AppCompatActivity{
                     Message message = new Message();
                     message.setContent("this is a message send from mainActivity by Messenger");
                     android.os.Message messageHandler = new android.os.Message();
+
+                    // android.os.Message对象还可设置一个replyTo属性, 这个属性就是一个Messenger对象。
+                    // 即提供给处理这个Message的一方(这里是service端), 一个回复消息的Messenger。
+                    messageHandler.replyTo = messengerClient;
+
+                    // 使用Messenger发送一个android.os.Message,
+                    // 这里android的Message需要塞入一个bundle, bundle中用键值对的方式塞入真正要传递的数据
                     Bundle bundle = new Bundle();
                     bundle.putParcelable("message", message);
                     messageHandler.setData(bundle);
